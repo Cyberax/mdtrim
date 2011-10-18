@@ -1,0 +1,11 @@
+This is an experiment in TRIM support for MD devices. It basically creates a large file (using the fallocate() syscall),
+then uses hdparm tool to get information about file extents, maps them to physical device addresses and calls TRIM on them.
+
+To make sure that we're really trimming the right data, mdtrim writes random data at the beginning, end and some 
+middle parts of the extent and makes sure that this data is read correctly using direct IO on the block device.
+
+Should be fairly safe if I haven't messed up with logical-to-physical sector translation too much.
+
+
+The test/test.sh script can be used to test it. WARNING! While mdtrim.py is fairly safe, test.sh script is 
+definitely NOT safe as it formats the drive which is used to do testing.
