@@ -118,6 +118,7 @@ lines = blockmap.stdout.readlines()
 if lines[2].find("assuming %d byte sectors" % sector_size) == -1:
 	print "We're assuming incorrect sector size %d, "\
 		"that's what HDPARM thinks:\n\t'%s'" % (sector_size, lines[2].strip())
+	sys.exit(1)
 
 print "Writing misalignment detector signatures"
 trim_ranges = []
@@ -175,6 +176,7 @@ for sl in slaves.values():
 			os.lseek(sl["file"], slave_offset + test["sector"]*sector_size, os.SEEK_SET)			
 			if libc.read(sl["file"], read_buf+read_buf_offset, sector_size)!=sector_size:
 				print "Can't directly read data from %s" % sl
+				sys.exit(2)
 
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
 			if what_we_read != test["data"]:
@@ -211,6 +213,7 @@ for sl in slaves.values():
 			os.lseek(sl["file"], slave_offset + test["sector"]*sector_size, os.SEEK_SET)			
 			if libc.read(sl["file"], read_buf+read_buf_offset, sector_size)!=sector_size:
 				print "Can't directly read data from %s" % sl
+				sys.exit(3)
 
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
 			if what_we_read != '\0'*sector_size and what_we_read != test["data"]:
