@@ -100,13 +100,13 @@ temp_fl = tempfile.NamedTemporaryFile(delete=True, dir=scratch_dir, prefix="fill
 # This will allocate the blocks and commit them to file, but not actually write data into it.
 print "Creating trimmer file"
 FALLOC_FL_KEEP_SIZE = c_int(0)
-if libc.fallocate(temp_fl.fileno(), c_int(0), 
-	c_longlong(0), c_longlong(file_size+block_size*16)) !=0:
-	print "Cannot call fallocate on scratch file"
+res = libc.fallocate(temp_fl.fileno(), c_int(0), c_longlong(0), c_longlong(file_size+block_size*16)) 
+if res!=0:
+	print "Cannot call fallocate on scratch file (err=%d)" % res
 	sys.exit(1)
-if libc.fallocate(temp_fl.fileno(), FALLOC_FL_KEEP_SIZE, 
-	c_longlong(0), c_longlong(file_size+block_size*16))!=0:
-	print "Cannot call fallocate on scratch file"
+res = libc.fallocate(temp_fl.fileno(), FALLOC_FL_KEEP_SIZE, c_longlong(0), c_longlong(file_size+block_size*16))
+if res!=0:
+	print "Cannot call fallocate on scratch file (err=%d)" % res
 	sys.exit(1)
 temp_fl.flush()
 os.fsync(temp_fl.fileno())
