@@ -142,15 +142,14 @@ for ln in lines[4:]:
 			return
 		# Create sector consisting of UUID, then padded with spaces and ending with another UUID
 		data = uuid.uuid4().hex
-		data2 = uuid.uuid4().hex
-		padding = sector_size - len(data) - len(data2)
-		sector_data = data + ' '*padding + data2
+		padding = sector_size - len(data)*2
+		sector_data = data + ' '*padding + data
 
 		offset = (lba - begin_lba)*sector_size + byte_offset
 		temp_fl.seek(long(offset), os.SEEK_SET)
 		temp_fl.write(sector_data)
 		
-		control[lba] = {"sector" : lba, "data" : data, "data2" : data2, "file_offset" : offset,
+		control[lba] = {"sector" : lba, "data" : data, "file_offset" : offset,
 				"ln" : (end_lba-begin_lba)*sector_size}
 
 	create_control(begin_lba)
@@ -181,9 +180,8 @@ for sl in slaves.values():
 				sys.exit(2)
 
 			data = test["data"]
-			data2 = test["data2"]
-			padding = sector_size - len(data) - len(data2)
-			sector_data = data + ' '*padding + data2
+			padding = sector_size - len(data)*2
+			sector_data = data + ' '*padding + data
 
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
 			if what_we_read != sector_data:
@@ -226,9 +224,8 @@ for sl in slaves.values():
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
 			if what_we_read != allzeros:
 				data = test["data"]
-				data2 = test["data2"]
-				padding = sector_size - len(data) - len(data2)
-				sector_data = data + ' '*padding + data2
+				padding = sector_size - len(data)*2
+				sector_data = data + ' '*padding + data
 				if what_we_read != sector_data:
 					print "Well, it appears your data might be damaged. Oops."
 					sys.exit(3)
