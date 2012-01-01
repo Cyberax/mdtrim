@@ -3,6 +3,7 @@
 # though RAID-0 is easy enough to add.
 import sys, os, tempfile, time, subprocess, re, uuid, mmap, ctypes
 from ctypes import *
+from random import choice
 from optparse import OptionParser
 libc = cdll.LoadLibrary("libc.so.6")
 
@@ -149,13 +150,13 @@ for ln in lines[4:]:
 		temp_fl.seek(long(offset), os.SEEK_SET)
 		temp_fl.write(sector_data)
 		
-		control[lba] = {"sector" : lba, "data" : sector_data, "file_offset" : offset,
+		control[lba] = {"sector" : lba, "data" : data, "data2" : data2, "file_offset" : offset,
 				"ln" : (end_lba-begin_lba)*sector_size}
 
 	create_control(begin_lba)
 	# Sprinkle some control data in-between
-	for cur in range(begin_lba, end_lba, (end_lba-begin_lba)/100+1):
-		create_control(cur)
+	create_control(choice(range(begin_lba, end_lba)))
+	create_control(choice(range(begin_lba, end_lba)))
 	create_control(end_lba)
 
 	trim_ranges.append({"extent_pos" : begin_lba, "extent_size" : size_in_blocks,  "test_data" : control})
@@ -179,8 +180,13 @@ for sl in slaves.values():
 				print "Can't directly read data from %s" % sl
 				sys.exit(2)
 
+			data = test["data"]
+			data2 = test["data2"]
+			padding = sector_size - len(data) - len(data2)
+			sector_data = data + ' '*padding + data2
+
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
-			if what_we_read != test["data"]:
+			if what_we_read != sector_data:
 				print "Data written into the file and data on the physical HD do not match!"
 				sys.exit(2)
 
@@ -207,6 +213,7 @@ for sl in slaves.values():
 
 print "\nTrimming finished. Your data is either safe or hopelessly corrupted."
 print "Let's find it out, are you feeling lucky?"
+allzeros = '\0'*sector_size
 for sl in slaves.values():
 	slave_offset = sl["offset"]*sector_size
 	for rng in trim_ranges:
@@ -217,9 +224,14 @@ for sl in slaves.values():
 				sys.exit(3)
 
 			what_we_read = string_at(read_buf+read_buf_offset, sector_size)
-			if what_we_read != '\0'*sector_size and what_we_read != test["data"]:
-				print "Well, it appears your data might be damaged. Oops."
-				sys.exit(3)
+			if what_we_read != allzeros:
+				data = test["data"]
+				data2 = test["data2"]
+				padding = sector_size - len(data) - len(data2)
+				sector_data = data + ' '*padding + data2
+				if what_we_read != sector_data:
+					print "Well, it appears your data might be damaged. Oops."
+					sys.exit(3)
 
 	print "Finished checking data from slave %s" % sl["drive"]
 print "Well, it appears that your data is safe"
